@@ -12,6 +12,12 @@ checkModel = function(model)
   delta = model[[10]]
   dist = tolower(model[[11]])
   obs = model[[12]]
+  if (length(model) > 12) {
+    fixedObs = model[[13]]
+    P = model[[14]]
+    beta = model[[15]]
+  }
+    
 
   #Check Total
   if(Total<1 || Total != round(Total))
@@ -78,12 +84,12 @@ checkModel = function(model)
   if(any(theta < 0) )
   {stop("Input must be positive: ", "theta")}
   if(any(dim(theta)!=c(J,K,maxV)))
-  {stop("Input of incorrect dimensions: ", "theta", " must be of dimension ", "{J,K,max(V)}")}
+  {stop("Input of incorrect dimensions: ", "theta", " must be of dimension ", "{1,J,K,max(V)}")}
   for(j in 1:J)
   {
     for(k in 1:K)
     {
-      if(abs(sum(theta[j,k,])-1)>1e-10 & dist[j] !="bernoulli")
+      if(abs(sum(theta[j,k,])-1) > 1e-10 & dist[j] !="bernoulli")
       {stop("Distribution must sum to 1 for theta for Variable ", j)}
     }
   }
@@ -109,7 +115,7 @@ checkModel = function(model)
       {
         for(n in 1:Nijr[i,j,r])
         {
-          if(abs(sum(delta[i,j,r,n,])-1)>1e-10)
+          if(abs(sum(delta[i,j,r,n,])-1) > 1e-10)
           {browser()
             stop("Delta must sum to 1 for delta[",paste(i,j,r,n,sep = ","),", ]")}
         }
@@ -119,7 +125,18 @@ checkModel = function(model)
   
   #check obs
   if(obs != round(obs)||obs<0)
-  {stop("Obs must be non-negative integers")}
+  {stop("obs must be non-negative integers")}
   if(any(dim(obs)!= c(Total, J, maxR, maxN)))
   {stop("Input of incorrect dimensions: ", "Obs", " must be of dimension ", "{Total,J,max(Rj),max(Nijr)}")}
+  
+  if(length(model) > 12){
+  # check fixed obs
+  if(!is.null(fixedObs)){
+    if(any(dim(fixedObs) != c(1, J, maxR, maxN))) {
+      stop("fixedObs must be of dimension (J, max(Rj), max(Nijr)")
+    }
+    if(is.null(P))
+    {stop("P must be specified if fixedObs is not null")}
+    }
+  }
 }

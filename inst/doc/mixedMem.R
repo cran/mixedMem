@@ -108,9 +108,9 @@ pchisq(chi.squared, df = (J-1) * max(Vj))
 names(out)
 out$alpha
 
-## ----theta, fig.height = 7, fig.width = 7, fig.align = 'center', fig.cap = "Individuals were asked to indicate their level of agreement with 19 opinion based statements. The fitted multinomial response probabilities for each ideology bloc to each of the first 10 statements are displayed. On the horizontal axis, 0 indicates agree, 1 indicates can't decide, and 2 indicates disagree. The estimates from our variational analysis are denoted by the dots, the Gross and Manrique-Vallier results using MCMC are shown by the red X's. Since they do not report estimates for Group 3, the Can't Decide group, those estimates are shown as 0's."----
+## ----theta, fig.height = 7, fig.width = 7, fig.align = 'center', fig.cap = "Individuals were asked to indicate their level of agreement with 19 opinion based statements. The fitted multinomial response probabilities for each ideology bloc to each of the first 10 statements are displayed. On the horizontal axis, 0 indicates agree, 1 indicates can't decide, and 2 indicates disagree. The estimates from our variational analysis are denoted by the dots, the Gross and Manrique-Vallier results using MCMC are shown by the red X's. Since they do not report estimates for Group 3, the Can't Decide group, those estimates are shown as 0's. The estimates for the first 10 questions are shown."----
 plot(out.permute, type = "theta", compare = gmv_theta, varNames = colnames(ANES),
-         groupNames = c("Conservative", "Liberal", "Undecided"), nrow = 10)
+         groupNames = c("Conservative", "Liberal", "Undecided"), nrow = 10, indices = c(1:10))
 
 ## ----consprop, fig.width = 4, fig.height = 4, fig.align='center', fig.cap = "Propensity to agree with each opinion-based statement for the conservative bloc"----
 pop1VarOrder <- colnames(ANES)[order(out.permute$theta[, 1, 1], decreasing = T)]

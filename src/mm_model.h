@@ -33,8 +33,9 @@ public:
     double getPhi(int i, int k);
     double getDelta(int i, int j, int r, int n, int k);
     int getObs(int i, int j, int r, int n);
-    CharacterVector getDist();
     std::string getDist(int j);
+
+
 
     //set individual element
     void setAlpha(int k, double target);
@@ -48,6 +49,7 @@ public:
     void incPhi(int i, int k, double inc);
     void incAlpha(int k, double inc);
     void incTheta(int j, int k, int v, double inc);
+    Rcpp::List returnModel();
 
 protected:
     int T;

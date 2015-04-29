@@ -1,13 +1,15 @@
-#include "varInf.h"
+#include "varInfExt.h"
 
 // [[Rcpp::depends(BH)]]
 // [[Rcpp::depends(RcppArmadillo)]]
-double varInfC(mm_model model, int print,
+double varInfExtC(mm_modelExt model, int print,
                int printMod, int stepType, int maxTotalIter,
                int maxEIter, int maxAlphaIter, int maxThetaIter, int maxLSIter,
                double elboTol, double alphaTol, double thetaTol, double aNaught,
                double tau, int bMax, double bNaught, double bMult, int vCutoff, NumericVector holdConst)
 {
+
+
 
     /*
     * Initializations
@@ -15,20 +17,24 @@ double varInfC(mm_model model, int print,
     NumericVector iterReached(3); //Vector to keep track of whether any of the iteration limits are hit in the E-Step or M-Steps
     double converged_T = 1.0; //convergence criteria: (old_elbo_T - elbo_T)/old_elbo_T
     double old_elbo_T = 0.0; //value of elbo from previous iteration
-    double elbo_T = compute_ELBO(model); //updated Elbo
+    double elbo_T = compute_ELBOExt(model); //updated Elbo
     int nT = 0; //count of Total EM Steps
+
 
     //only run an E-step
     if (stepType == 0) {
-        elbo_T = eStep_C(model, elbo_T, maxEIter, elboTol, iterReached);
+        updateBeta(model);
+        elbo_T = eStepExt(model, elbo_T, maxEIter, elboTol, iterReached);
         if((nT % printMod == 0) && (print==1)) {
-            Rcout<<"E-Step: "<<elbo_T<<endl;
+            Rcout<<"E-Step + Beta Update: "<<elbo_T<<endl;
         }
     } else {     //go through E and M steps
-
         while((converged_T > elboTol) && (nT < maxTotalIter)) {
 
+
             nT++; //increment count of iterations
+
+
 
             //print if necessary
             if((nT % printMod == 0) && (print == 1)) {
@@ -38,21 +44,34 @@ double varInfC(mm_model model, int print,
             //store old Elbo
             old_elbo_T = elbo_T;
 
-            // E Step
-            elbo_T = eStep_C(model, elbo_T, maxEIter, elboTol, iterReached); //defined in eStep.cpp
 
+
+
+
+            // E Step
+            elbo_T = eStepExt(model, elbo_T, maxEIter, elboTol, iterReached); //defined in eStep.cpp
             //print if necessary
             if((nT % printMod == 0) && (print==1)) {
                 Rcout<<"E-Step: "<<elbo_T<<endl;
             }
 
+
+
             //M-step; choice of which parameters to update handled inside mStep_C function
-            elbo_T = mStep_C(model, elbo_T, stepType, maxAlphaIter, maxThetaIter, maxLSIter,
+            elbo_T = mStepExt(model, elbo_T, stepType, maxAlphaIter, maxThetaIter, maxLSIter,
                              alphaTol, thetaTol, aNaught, tau, bMax, bNaught, bMult, vCutoff, holdConst, iterReached); //defined in mStep.cpp
 
             //print if necessary
             if((nT % printMod == 0) && (print == 1)) {
                 Rcout<<"M-Step: "<<elbo_T<<endl;
+            }
+
+            updateP(model);
+            updateBeta(model);
+            elbo_T = compute_ELBOExt(model);
+            //print if necessary
+            if((nT % printMod == 0) && (print==1)) {
+                Rcout<<"X-Step: "<<elbo_T<<endl;
             }
 
             //update convergence criteria
@@ -83,12 +102,13 @@ double varInfC(mm_model model, int print,
 }
 
 
-double compute_ELBO(mm_model model)
+
+double compute_ELBOExt(mm_modelExt model)
 {
-    double t1,t2,t3,t4;
+    double t1,t2,t3,t4, t5;
     double phi_sum;
     double elbo;
-    int i,j,k,r,n;
+    int i, j, k, r, n;
     int T = model.getT();
     int K = model.getK();
     int J = model.getJ();
@@ -104,8 +124,22 @@ double compute_ELBO(mm_model model)
     t3 = 0.0;
     t4 = 0.0;
 
+    t1 = (T - model.getNumStayers()*model.getBeta())*(lgamma(sum(model.getAlpha())) - sum(lgamma(model.getAlpha())));
+    t5 = model.getNumStayers() * (model.getBeta() * log(model.getP()) + (1.0 - model.getBeta()) * log(1.0 - model.getP()) );
+        if(!(t5> -INFINITY)) {
+        Rcout <<"Term 1"<<endl;
+    }
 
-    t1 = T*lgamma(sum(model.getAlpha())) - T*sum(lgamma(model.getAlpha()));
+    t5 += (T - model.getNumStayers()) * log(1.0 - model.getP());
+        if(!(t5> -INFINITY)) {
+        Rcout <<"Term 2"<<endl;
+    }
+
+    t5 += -model.getNumStayers() * (model.getBeta() * log(model.getBeta()) +  (model.getBeta() ? 0 : ((1.0 - model.getBeta())*log(1.0 - model.getBeta())) ) );
+
+    if(!(t5> -INFINITY)) {
+        Rcout <<"Term 3"<<endl;
+    }
     for(i = 0; i < T; i++) {
         phi_sum = 0.0;
         for(k = 0; k < K; k++) {
@@ -117,18 +151,22 @@ double compute_ELBO(mm_model model)
         for(k = 0; k < K; k++) {
             phi_ik = model.getPhi(i,k);
             back_term = (boost::math::digamma(phi_ik) - dg_phi_sum);
-            t1+= (model.getAlpha(k)-1)*back_term;
+            if(model.getStayers(i)) {
+                t1 += (model.getAlpha(k) - 1.0) * back_term  * (1.0 - model.getBeta());
+            } else {
+                 t1 += (model.getAlpha(k) - 1.0) * back_term;
+            }
 
             t4 += -lgamma(phi_ik);
-            t4 += (phi_ik-1)*back_term;
+            t4 += (phi_ik - 1.0)*back_term;
 
             for(j = 0; j < J; j++) {
                 for(r = 0; r < model.getR(j); r++) {
                     Nijr = model.getN(i,j,r);
                     for(n = 0; n < Nijr; n++) {
                         delta_ijrnk = model.getDelta(i,j,r,n,k);
-                        t2 += delta_ijrnk*back_term;
-                        t4 += delta_ijrnk*log(delta_ijrnk);
+                        t2 += delta_ijrnk * back_term * (model.getStayers(i) ? (1.0 - model.getBeta()) : 1.0);
+                        t4 += delta_ijrnk * log(delta_ijrnk);
                     }
                 }
             }
@@ -136,13 +174,13 @@ double compute_ELBO(mm_model model)
     }
 
     //compute 3rd line
-    t3 = compute_logf(model);
+    t3 = compute_logfExt(model);
 
-    elbo = t1+t2+t3-t4;
+    elbo = t1 + t2 + t3 - t4 + t5;
 
     //debug!
     if(!(elbo > -INFINITY)) {
-        Rcout<< t1 <<" "<<t2 <<" "<<t3 <<" "<<t4 <<endl<<"Alpha: "<<endl;
+        Rcout<< t1 <<" "<<t2 <<" "<<t3 <<" "<<t4 <<" " << t5 <<endl<<"Alpha: "<<endl;
         for(k = 0; k < K; k++) {
             Rcout<<model.getAlpha(k)<<" ";
         }
@@ -152,7 +190,7 @@ double compute_ELBO(mm_model model)
 }
 
 
-double compute_logf(mm_model model)
+double compute_logfExt(mm_modelExt model)
 {
     double logf = 0.0;
     double back_term;
@@ -165,8 +203,8 @@ double compute_logf(mm_model model)
                 v = 0;
                 for(r = 0; r < model.getR(j); r++) {
                     for(k = 0; k < model.getK(); k++) {
-                        logf += ( model.getObs(i,j,r,n) ? model.getDelta(i,j,r,n,k)*log(model.getTheta(j,k,v)) :
-                                  model.getDelta(i,j,r,n,k)*log(1.0 - model.getTheta(j,k,v))) ;
+                        logf += ( model.getObs(i,j,r,n) ? model.getDelta(i,j,r,n,k) * log(model.getTheta(j,k,v)) :
+                                  model.getDelta(i,j,r,n,k)*log(1.0 - model.getTheta(j,k,v))) * (model.getStayers(i) ? (1.0 - model.getBeta()) : 1.0) ;
                     }
                 }
             } //end bernoulli
@@ -174,7 +212,7 @@ double compute_logf(mm_model model)
                 n = 0;
                 for(r = 0; r < model.getR(j); r++) {
                     for(k = 0; k < model.getK(); k++) {
-                        logf += model.getDelta(i,j,r,n,k)*log(model.getTheta(j,k,model.getObs(i,j,r,n)));
+                        logf += model.getDelta(i,j,r,n,k)*log(model.getTheta(j,k,model.getObs(i,j,r,n)))  * (model.getStayers(i) ? (1.0 - model.getBeta()) : 1.0);
                     }
                 }
             } //end Multinomial
@@ -184,8 +222,8 @@ double compute_logf(mm_model model)
                     for(k = 0; k < model.getK(); k++) {
                         back_term = 0.0;
                         for(n = 0; n < Nijr; n++) {
-                            logf += -model.getDelta(i,j,r,n,k)*log(1.0 - back_term);
-                            logf += model.getDelta(i,j,r,n,k)*log(model.getTheta(j,k,model.getObs(i,j,r,n))) ;
+                            logf += -model.getDelta(i,j,r,n,k)*log(1.0 - back_term)  * (model.getStayers(i) ? (1.0 - model.getBeta()) : 1.0);
+                            logf += model.getDelta(i,j,r,n,k)*log(model.getTheta(j,k,model.getObs(i,j,r,n)))  * (model.getStayers(i) ? (1.0 - model.getBeta()) : 1.0);
                             back_term += model.getTheta(j,k,model.getObs(i,j,r,n));
                         }
                     }
@@ -197,7 +235,8 @@ double compute_logf(mm_model model)
 }
 
 
-double alpha_Objective(mm_model model, vec alph)
+
+double alpha_ObjectiveExt(mm_modelExt model, vec alph)
 {
     double objective;
     int T = model.getT();
@@ -229,7 +268,7 @@ double alpha_Objective(mm_model model, vec alph)
     return objective;
 }
 
-double alpha_Objective(mm_model model)
+double alpha_ObjectiveExt(mm_modelExt model)
 {
     int T = model.getT();
     int K = model.getK();

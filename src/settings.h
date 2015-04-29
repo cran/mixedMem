@@ -5,6 +5,7 @@
 #include <math.h>
 #include <RcppArmadillo.h>
 
+
 // After normalization, if any of the values hit numerical 0, then bump by this amount
 const double BUMP =  1e-16;
 const double COND_BOUND =  1e18;

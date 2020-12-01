@@ -12,6 +12,7 @@ checkModel = function(model)
   delta = model[[10]]
   dist = tolower(model[[11]])
   obs = model[[12]]
+  
   if (length(model) > 12) {
     fixedObs = model[[13]]
     P = model[[14]]
@@ -20,30 +21,40 @@ checkModel = function(model)
     
 
   #Check Total
-  if(Total<1 || Total != round(Total))
-  {stop("Input must be positive Integer: ", "Total")}
   if(length(Total)>1)
   {stop("Input of incorrect dimensions: ", "Total", " must be of dimension ", "1")}
   
+  if(Total<1 | Total != round(Total))
+  {stop("Input must be positive Integer: ", "Total")}
+  
+  
+  
   # Check J
-  if(J<1 || J != round(J))
-  {stop("Input must be positive Integer: ", "J")}
   if(length(J)>1)
   {stop("Input of incorrect dimensions: ", "J", " must be of dimension ", "1")}
   
+  if(J<1 | J != round(J))
+  {stop("Input must be positive Integer: ", "J")}
+
+  
   
   # Check Rj
-  if(Rj < 1 || Rj != round(Rj))
-  {stop("Input must be positive Integer: ", "Rj")}
-  if(length(Rj) != J|!is.null((dim(Rj))))
+  if(length(Rj) != J | !is.null((dim(Rj))))
   {stop("Input of incorrect dimensions: ", "Rj", " must be of dimension ", "J")}
+  
+  if(any(Rj < 1) | any(Rj != round(Rj)))
+  {stop("Input must be positive Integer: ", "Rj")}
+  
   maxR = max(Rj)
   
   # Check Nijr
-  if(Nijr < 1 || Nijr != round(Nijr))
-  {stop("Input must be positive Integer: ", "Nijr")}
+  for(j in 1:J){
+    if(any(Nijr[, j,1:Rj[j], drop = F] < 1) | any(Nijr[, j,1:Rj[j], drop = F] != round(Nijr[, j,1:Rj[j], drop = F])))
+    {stop("Input must be positive Integer: ", "Nijr")}
+  }
+  
   if(any(dim(Nijr) != c(Total,J,maxR)))
-  {stop("Input of incorrect dimensions: ", "Nijr", " must be of dimension ", "{Total,J,max(Rj)}")}
+    {stop("Input of incorrect dimensions: ", "Nijr", " must be of dimension ", "{Total,J,max(Rj)}")}
   maxN = max(Nijr)
   
   #Check K
@@ -59,11 +70,13 @@ checkModel = function(model)
   {stop("dist must be of length J")}
   
   # Check Vj
-  if(Vj < 1 || Vj != round(Vj))
+  if( any(Vj < 1) | any(Vj != round(Vj)))
   {stop("Input must be positive Integer: ", "Vj")}
   if(length(Vj) !=J)
   {stop("Input of incorrect dimensions: ", "Vj", " must be of dimension ", "J")}
-  if(Vj > 1 && dist=="bernoulli")
+  
+  ##Problem ##
+  if(any(Vj > 1 & dist=="bernoulli"))
   {stop("V must be 1 for bernoulli variables")}
   
   for(j in 1:J)
@@ -77,7 +90,7 @@ checkModel = function(model)
   # Check alpha
   if(any(alpha < 0) )
   {stop("Input must be positive: ", "alpha")}
-  if(length(alpha) !=K|!is.null(dim(alpha)) )
+  if(length(alpha) != K | !is.null(dim(alpha)) )
   {stop("Input of incorrect dimensions: ", "alpha", " must be of dimension ", "K")}
   
   #check theta
@@ -107,27 +120,32 @@ checkModel = function(model)
   {stop("Input must be positive: ", "delta")}
   if(any(dim(delta)!=c(Total,J,maxR,maxN,K)))
   {stop("Input of incorrect dimensions: ", "delta", " must be of dimension ", "{Total,J,max(Rj),max(Nijr),K}")}
+  
+  #check obs
+  if(any(dim(obs)!= c(Total, J, maxR, maxN)))
+  {stop("Input of incorrect dimensions: ", "Obs", " must be of dimension ", "{Total,J,max(Rj),max(Nijr)}")}
+  
   for(i in 1:Total)
   {
     for(j in 1:J)
     {
       for(r in 1:Rj[j])
       {
+        if(any(obs[i, j,r, 1:Nijr[i,j,r], drop = F] != round(obs[i, j,r, 1:Nijr[i,j,r], drop = F])) | any(obs[i, j, r, 1:Nijr[i,j,r], drop = F] < 0 ))
+        {stop("obs must be non-negative integers")}
+        
         for(n in 1:Nijr[i,j,r])
         {
           if(abs(sum(delta[i,j,r,n,])-1) > 1e-10)
-          {browser()
-            stop("Delta must sum to 1 for delta[",paste(i,j,r,n,sep = ","),", ]")}
+          {stop("Delta must sum to 1 for delta[",paste(i,j,r,n,sep = ","),", ]")}
         }
       }
     }
   }
   
-  #check obs
-  if(obs != round(obs)||obs<0)
-  {stop("obs must be non-negative integers")}
-  if(any(dim(obs)!= c(Total, J, maxR, maxN)))
-  {stop("Input of incorrect dimensions: ", "Obs", " must be of dimension ", "{Total,J,max(Rj),max(Nijr)}")}
+  
+  
+  
   
   if(length(model) > 12){
   # check fixed obs

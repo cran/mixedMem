@@ -91,20 +91,20 @@ The package supports multivariate models (with or without repeated measurements)
 }
 
 \author{
-Sam Wang <ysamwang@uw.edu>, Elena Erosheva <erosheva@uw.edu>
+Y. Samuel Wang <ysamuelwang@gmail.com>, Elena Erosheva <erosheva@uw.edu>
 }
 
 \references{
 Airoldi, E. M., Blei, D., Erosheva, E. A., & Fienberg, S. E.. 2014. Handbook of Mixed Membership Models and Their Applications. CRC Press. Chicago  
 
-Blei, David; Ng, Andrew Y.; Jordan, Michael I.. 2003. Latent Dirichlet Allocation. Journal of Machine Learning Research, 3, 993-1022. \url{http://www.cs.columbia.edu/~blei/papers/BleiNgJordan2003.pdf}
+Blei, David; Ng, Andrew Y.; Jordan, Michael I.. 2003. Latent Dirichlet Allocation. Journal of Machine Learning Research, 3, 993-1022. 
 
-Erosheva, Elena A.; Fienberg, Stephen E.; Joutard, Cyrille. 2007. Describing Disability Through Individual-level Mixture Models for Multivariate Binary Data. The Annals of Applied Statistics 1 (2007), no. 2, 502--537. doi:10.1214/07-AOAS126. \url{http://projecteuclid.org/euclid.aoas/1196438029}.
+Erosheva, Elena A.; Fienberg, Stephen E.; Joutard, Cyrille. 2007. Describing Disability Through Individual-level Mixture Models for Multivariate Binary Data. The Annals of Applied Statistics 1 (2007), no. 2, 502--537. doi:10.1214/07-AOAS126.
 
 Erosheva, Elena A.; Fienberg, Stephen E.; Lafferty, John. 2004. Mixed-membership Models of Scientific Publications".
-PNAS, 101 (suppl 1), 5220-5227. doi:10.1073/pnas.0307760101. \url{http://www.pnas.org/content/101/suppl_1/5220.full}.
+PNAS, 101 (suppl 1), 5220-5227. doi:10.1073/pnas.0307760101.
 
-Gormley, Isobel C.; Murphy, Thomas B.. 2009. A Grade of Membership Model for Rank Data. Bayesian Analysis, 4, 265 - 296. DOI:10.1214/09-BA410. \url{http://ba.stat.cmu.edu/journal/2009/vol04/issue02/gormley.pdf}
+Gormley, Isobel C.; Murphy, Thomas B.. 2009. A Grade of Membership Model for Rank Data. Bayesian Analysis, 4, 265 - 296. DOI:10.1214/09-BA410.
 
 National Election Studies, 1983 Pilot Election Study. Ann Arbor, MI: University of Michigan, Center for Political Studies, 1999
 
@@ -115,4 +115,6 @@ Gross, Justin; Manrique-Vallier, Daniel. 2014.  A Mixed-membership Approach to t
 }
 % Optionally other standard keywords, one per line,
 % from the file KEYWORDS in the R documentation.
-\keyword{mixed membership, grade of membership}
+\concept{mixed membership}
+\concept{grade of membership}
+\concept{variational inference}

@@ -1,7 +1,7 @@
-## ----echo = FALSE, warning=FALSE-----------------------------------------
+## ----echo = FALSE, warning=FALSE----------------------------------------------
 library(xtable, quietly = TRUE)
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 library(mixedMem)
 data(ANES)
 # Dimensions of the data set: 279 individuals with 19 responses each
@@ -15,7 +15,7 @@ colnames(ANES)
 # Distribution of responses
 table(unlist(ANES))
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 # Sample Size
 Total <- 279
 # Number of variables
@@ -52,7 +52,7 @@ initial <- mixedMemModel(Total = Total, J = J, Rj = Rj,
                          Nijr = Nijr, K = K, Vj = Vj, alpha = alpha,
                          theta = theta, dist = dist, obs = obs)
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 computeELBO(initial)
 st = proc.time()
 #printStatus 1 indicates that status updates will be printed
@@ -62,10 +62,10 @@ end <- proc.time()
 computeELBO(out)
 time <- end - st
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 summary(out)
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 #read in GM estimates
 # Note that Gross and Manrique-Vallier do not report estimates for the third group, so they have been set to 0 in the data
 data(gmv_theta)
@@ -76,7 +76,7 @@ optimal.perm
 # save object with permuted labels
 out.permute <- permuteLabels(out, optimal.perm$perm)
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 # calculate the expected value
 model.exp <- matrix(0, nrow = J, ncol = max(Vj))
 for(j in 1:J){
@@ -88,7 +88,7 @@ model.exp <- model.exp*out.permute$Total
 obs.counts <- t(apply(obs[, , 1, 1] + 1, MARGIN = 2, tabulate))
 chi.squared <- sum( (obs.counts - model.exp)^2 / model.exp)
 
-## ----results = 'asis', echo = FALSE--------------------------------------
+## ----results = 'asis', echo = FALSE-------------------------------------------
 tab <- cbind(model.exp[, 1], obs.counts[, 1],
              model.exp[, 2], obs.counts[, 2],
              model.exp[, 3], obs.counts[, 3])
@@ -97,13 +97,13 @@ colnames(tab) <- c("Exp Agree", "Obs Agree",  "Exp Can't Decide", "Obs Can't Dec
 xtable(tab, digits = 1, caption = "Expected responses based on fitted parameters and Observed responses")
 
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 # The chi squared statistic
 chi.squared
 # p-value
 pchisq(chi.squared, df = (J-1) * max(Vj))
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 # The estimated quantities can be exctracted from the output model
 names(out)
 out$alpha
@@ -130,7 +130,7 @@ barplot(height = pop2VarAgree,
         ylab = expression(paste(theta["j,2,1"])),
         col = ifelse(pop2VarAgree > .5, "forestgreen", "darkred"))
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 # Point estimates for lambda
 lambda.point <- out.permute$phi / rowSums(out.permute$phi)
 # number of individuals which exhibit more than .3 degree of membership
@@ -139,10 +139,10 @@ sum(lambda.point[, 3] >= .3)
 # number of can not decide responses from those with high membership in undecided group
 sum(ANES[which(lambda.point[, 3] >= .3),] == 1)
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 relativeFrequency <- out.permute$alpha / sum(out.permute$alpha)
 
-## ----echo = FALSE, results = 'asis'--------------------------------------
+## ----echo = FALSE, results = 'asis'-------------------------------------------
 table.alpha = rbind(out.permute$alpha, relativeFrequency)
 rownames(table.alpha) = c("Estimated Alpha", "Estimate Relative Frequency")
 colnames(table.alpha) = c("Conservatives", "Liberals", "Undecided")
@@ -159,7 +159,7 @@ barplot(sort(hellingerDist, decreasing = T),
 mtext("Between Conservatives and Liberals")
 colnames(ANES)[order(hellingerDist, decreasing = T)][1:3]
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 # number of individuals with at least 40% membership in
 # both conservative and liberal blocs
 sum( (lambda.point[, 1] > .4) & (lambda.point[, 2] > .4))
